@@ -21,8 +21,8 @@ const AdminSettings = mongoose.model('AdminSettings', new mongoose.Schema({
 const app = express();
 
 app.use(cors({
-    origin: "https://frontend-el8v.onrender.com",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "https://frontend-i8ew.onrender.com", // <-- Update this to your exact current frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
 
