@@ -1,5 +1,4 @@
 
-const cors = require("cors");
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -7,6 +6,9 @@ import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+
+dotenv.config();
+// ... rest of your code
 
 dotenv.config();
 
@@ -29,7 +31,7 @@ app.post("/api/send-otp", (req, res) => {
     res.send("OTP sent");
 });
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
 mongoose.connect(process.env.MONGO_URI).then(() => console.log("MongoDB Connected")).catch(err => console.error(err));
 
