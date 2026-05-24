@@ -1,4 +1,3 @@
-
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -8,37 +7,36 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 
 dotenv.config();
-// ... rest of your code
-
-dotenv.config();
 
 const AdminSettings = mongoose.model('AdminSettings', new mongoose.Schema({
     _id: { type: String, default: "game_control" },
     forcedNextNumber: { type: Number, default: null }
 }), 'adminsettings');
 
-
 const app = express();
 
-// app.use(cors({
-//     origin: "https://frontend-i8ew.onrender.com", // <-- Update this to your exact current frontend URL
-//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//     credentials: true
-// }));
+// ==========================================
+// MIDDLEWARES (Must be placed before routes)
+// ==========================================
+
+// 1. Unified CORS Setup targeting your exact current frontend origin (No trailing slash)
 app.use(cors({
-    origin: "https://frontend-5-vvsx.onrender.com", // <-- Update this to your exact current frontend URL
+    origin: "https://frontend-5-vvsx.onrender.com", 
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
 
+// 2. Body Parsers to correctly parse payload streams
 app.use(express.json({ limit: '10mb' }));
-app.post("/api/send-otp", (req, res) => {
-    res.send("OTP sent");
-});
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-// app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log("MongoDB Connected")).catch(err => console.error(err));
+// ==========================================
+// DATABASE & MODELS
+// ==========================================
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.error(err));
 
 const WithdrawalSchema = new mongoose.Schema({
     amount: { type: Number, required: true },
@@ -78,6 +76,10 @@ const PeriodResultSchema = new mongoose.Schema({
 const PeriodResult = mongoose.model('PeriodResult', PeriodResultSchema);
 
 User.collection.dropIndex('email_1').catch(() => {});
+
+// ==========================================
+// CONFIGURATIONS & UTILITIES
+// ==========================================
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -132,6 +134,10 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// ==========================================
+// API ROUTE ENDPOINTS
+// ==========================================
 
 app.post('/api/send-otp', async (req, res) => {
     const { email } = req.body;
