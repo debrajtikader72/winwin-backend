@@ -1,5 +1,5 @@
 
-
+const cors = require("cors");
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -15,8 +15,19 @@ const AdminSettings = mongoose.model('AdminSettings', new mongoose.Schema({
     forcedNextNumber: { type: Number, default: null }
 }), 'adminsettings');
 
+
 const app = express();
+
+app.use(cors({
+    origin: "https://frontend-el8v.onrender.com",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' }));
+app.post("/api/send-otp", (req, res) => {
+    res.send("OTP sent");
+});
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
