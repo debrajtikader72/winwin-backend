@@ -8,35 +8,29 @@ import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
-const AdminSettings = mongoose.model('AdminSettings', new mongoose.Schema({
-    _id: { type: String, default: "game_control" },
-    forcedNextNumber: { type: Number, default: null }
-}), 'adminsettings');
-
 const app = express();
 
-// ==========================================
-// MIDDLEWARES (Must be placed before routes)
-// ==========================================
-
-// 1. Unified CORS Setup targeting your exact current frontend origin (No trailing slash)
+// --- 1. MIDDLEWARE ---
+// Single, clean CORS configuration looking at your .env file
 app.use(cors({
-    origin: "https://winwin-frontend-6.onrender.com", 
+    origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
 
-// 2. Body Parsers to correctly parse payload streams
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// ==========================================
-// DATABASE & MODELS
-// ==========================================
-
+// --- 2. DATABASE CONNECTION ---
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error(err));
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.error(err));
+
+// --- 3. MONGOOSE SCHEMAS & MODELS ---
+const AdminSettings = mongoose.model('AdminSettings', new mongoose.Schema({
+    _id: { type: String, default: "game_control" },
+    forcedNextNumber: { type: Number, default: null }
+}), 'adminsettings');
 
 const WithdrawalSchema = new mongoose.Schema({
     amount: { type: Number, required: true },
@@ -77,10 +71,7 @@ const PeriodResult = mongoose.model('PeriodResult', PeriodResultSchema);
 
 User.collection.dropIndex('email_1').catch(() => {});
 
-// ==========================================
-// CONFIGURATIONS & UTILITIES
-// ==========================================
-
+// --- 4. HELPERS & CONFIG ---
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
@@ -135,10 +126,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// ==========================================
-// API ROUTE ENDPOINTS
-// ==========================================
-
+// --- 5. ROUTES ---
 app.post('/api/send-otp', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email required" });
