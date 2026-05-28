@@ -21,7 +21,7 @@ const app = express();
 
 // 1. Unified CORS Setup targeting your exact current frontend origin (No trailing slash)
 app.use(cors({
-    origin: "https://frontend-5-vvsx.onrender.com", 
+    origin: "https://winwin-frontend-6.onrender.com", 
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
