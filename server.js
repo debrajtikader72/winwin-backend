@@ -100,8 +100,14 @@ User.collection.dropIndex('email_1').catch(() => {});
 
 // --- 4. HELPERS & CONFIG ---
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    family: 4,
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
+    }
 });
 
 let otpCache = {};
