@@ -11,11 +11,38 @@ dotenv.config();
 const app = express();
 
 // --- 1. MIDDLEWARE ---
-// Single, clean CORS configuration looking at your .env file
+// A highly resilient CORS setup built to handle trailing slashes and production deployment quirks
+const clientUrl = process.env.CLIENT_URL;
+
+// 1. Absolute safety net: Hardcode your deployed frontend URLs so production NEVER fails
+const allowedOrigins = [
+    "https://winwin-frontend-9.onrender.com",
+    "https://winwin-frontend-9.onrender.com/"
+];
+
+// 2. Dynamically add the environment variable URL (clearing out any trailing slashes)
+if (clientUrl) {
+    const cleanUrl = clientUrl.replace(/\/$/, "");
+    if (!allowedOrigins.includes(cleanUrl)) allowedOrigins.push(cleanUrl);
+    if (!allowedOrigins.includes(cleanUrl + "/")) allowedOrigins.push(cleanUrl + "/");
+}
+
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+        // Allow server-to-server requests or tools like Postman (which don't send an origin header)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.error(`[CORS Error] Blocked request from unauthorized origin: ${origin}`);
+            // Fallback: block safely instead of crashing, but let the dev know via logs
+            callback(null, false); 
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true
+    credentials: true,
+    optionsSuccessStatus: 200 // Responds with a clean 200 OK to preflight OPTIONS requests
 }));
 
 app.use(express.json({ limit: '10mb' }));
