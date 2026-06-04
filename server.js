@@ -165,7 +165,9 @@ app.post('/api/send-otp', async (req, res) => {
         await transporter.sendMail(mailOptions);
         res.status(200).json({ message: "OTP sent" });
     } catch (err) {
-        res.status(500).json({ message: "Email error" });
+        // THIS WILL NOW SHOW YOU THE EXACT ERROR IN YOUR BROWSER NETWORK TAB
+        console.error("NODEMAILER ERROR:", err);
+        res.status(500).json({ message: "Email error", details: err.message }); 
     }
 });
 
