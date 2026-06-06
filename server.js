@@ -11,16 +11,13 @@ dotenv.config();
 const app = express();
 
 // --- 1. MIDDLEWARE ---
-// A highly resilient CORS setup built to handle trailing slashes and production deployment quirks
 const clientUrl = process.env.CLIENT_URL;
 
-// 1. Absolute safety net: Hardcode your deployed frontend URLs so production NEVER fails
 const allowedOrigins = [
     "https://winwin-frontend-9.onrender.com",
     "https://winwin-frontend-9.onrender.com/"
 ];
 
-// 2. Dynamically add the environment variable URL (clearing out any trailing slashes)
 if (clientUrl) {
     const cleanUrl = clientUrl.replace(/\/$/, "");
     if (!allowedOrigins.includes(cleanUrl)) allowedOrigins.push(cleanUrl);
@@ -29,20 +26,17 @@ if (clientUrl) {
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow server-to-server requests or tools like Postman (which don't send an origin header)
         if (!origin) return callback(null, true);
-        
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             console.error(`[CORS Error] Blocked request from unauthorized origin: ${origin}`);
-            // Fallback: block safely instead of crashing, but let the dev know via logs
             callback(null, false); 
         }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
-    optionsSuccessStatus: 200 // Responds with a clean 200 OK to preflight OPTIONS requests
+    optionsSuccessStatus: 200
 }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -98,29 +92,19 @@ const PeriodResult = mongoose.model('PeriodResult', PeriodResultSchema);
 
 User.collection.dropIndex('email_1').catch(() => {});
 
-// --- 4. HELPERS & CONFIG ---
+// --- 4. HELPERS & CONFIG (FIXED NODEMAILER) ---
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    family: 4, // This forces the IPv4 connection and stops the network crash
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
+    family: 4, // Prevents the Render ENETUNREACH IPv6 crash
+    auth: { 
+        user: process.env.MAIL_USER, 
+        pass: process.env.MAIL_PASS 
     }
 });
 
 let otpCache = {};
-
-function getActivePeriodId() {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
-    const counter = Math.floor(minutesSinceMidnight / 3);
-    return `${yyyy}${mm}${dd}${String(counter).padStart(3, '0')}`;
-}
 
 async function getOrCreatePeriodResult(periodId) {
     try {
@@ -159,21 +143,28 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// --- 5. ROUTES ---
+// --- 5. ROUTES (FIXED OTP ROUTE) ---
 app.post('/api/send-otp', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email required" });
+    
     const cleanEmail = email.trim().toLowerCase();
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpCache[cleanEmail] = { otp: otp, expires: Date.now() + 300000 };
-    const mailOptions = { from: process.env.MAIL_USER, to: cleanEmail, subject: 'WIN_WIN Verification Code', text: `Your OTP is: ${otp}` };
+    
+    const mailOptions = { 
+        from: process.env.MAIL_USER, 
+        to: cleanEmail, 
+        subject: 'WIN_WIN Verification Code', 
+        text: `Your OTP is: ${otp}` 
+    };
+    
     try {
         await transporter.sendMail(mailOptions);
         res.status(200).json({ message: "OTP sent" });
     } catch (err) {
-        // THIS WILL NOW SHOW YOU THE EXACT ERROR IN YOUR BROWSER NETWORK TAB
-        console.error("NODEMAILER ERROR:", err);
-        res.status(500).json({ message: "Email error", details: err.message }); 
+        console.error("DEBUG ERROR:", err);
+        res.status(500).json({ message: "Email Failed", details: err.message });
     }
 });
 
