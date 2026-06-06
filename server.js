@@ -103,7 +103,7 @@ const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    family: 4,
+    family: 4, // This forces the IPv4 connection and stops the network crash
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
