@@ -143,49 +143,6 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// // --- 5. ROUTES (FIXED OTP ROUTE) ---
-// app.post('/api/send-otp', async (req, res) => {
-//     const { email } = req.body;
-//     if (!email) return res.status(400).json({ message: "Email required" });
-    
-//     const cleanEmail = email.trim().toLowerCase();
-//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-//     otpCache[cleanEmail] = { otp: otp, expires: Date.now() + 300000 };
-    
-//     const mailOptions = { 
-//         from: process.env.MAIL_USER, 
-//         to: cleanEmail, 
-//         subject: 'WIN_WIN Verification Code', 
-//         text: `Your OTP is: ${otp}` 
-//     };
-    
-//     try {
-//         await transporter.sendMail(mailOptions);
-//         res.status(200).json({ message: "OTP sent" });
-//     } catch (err) {
-//         console.error("DEBUG ERROR:", err);
-//         res.status(500).json({ message: "Email Failed", details: err.message });
-//     }
-// });
-
-// app.post('/api/register', async (req, res) => {
-//     const { mobile, email, password, otp } = req.body;
-//     if (!mobile || !email || !password || !otp) return res.status(400).json({ message: "All fields required" });
-//     const cleanEmail = email.trim().toLowerCase();
-//     const cachedData = otpCache[cleanEmail];
-//     if (!cachedData || String(cachedData.otp).trim() !== String(otp).trim() || Date.now() > cachedData.expires) return res.status(400).json({ message: "Invalid or expired OTP" });
-//     try {
-//         let existingUser = await User.findOne({ mobile });
-//         if (existingUser) return res.status(400).json({ message: "Mobile already registered." });
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         const newUser = new User({ mobile, email: cleanEmail, password: hashedPassword });
-//         await newUser.save();
-//         delete otpCache[cleanEmail];
-//         res.status(201).json({ message: "Registration successful" });
-//     } catch (err) {
-//         res.status(500).json({ message: "Database error" });
-//     }
-// });
 // --- 5. ROUTES ---
 
 // 1. Send OTP Route (Emptied out so it doesn't crash if called)
@@ -357,6 +314,20 @@ app.get('/api/period-result/:period', async (req, res) => {
         else res.status(500).json({ message: "Error generating result" });
     } catch (err) {
         res.status(500).json({ message: "Server error" });
+    }
+});
+app.post('/api/sync-wallet', authenticateToken, async (req, res) => {
+    const { userId, balance, betHistory } = req.body;
+    try {
+        if (req.user.userId !== userId) return res.status(403).json({ message: "Unauthorized" });
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+        user.balance = balance;
+        user.betHistory = betHistory;
+        await user.save();
+        res.status(200).json({ message: "Wallet synced" });
+    } catch (err) {
+        res.status(500).json({ message: "Sync failed" });
     }
 });
 
